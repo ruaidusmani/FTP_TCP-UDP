@@ -31,6 +31,10 @@ def get_file_length(command_file_name):
         file_length_binary = -1  # -1 means that the file name is too long
     return file_length_binary
 
+def get_file_name_binary(command_file_name):
+    binary_string = ''.join(format(ord(char), '08b') for char in command_file_name)
+    return binary_string
+
 def protocol_input():
     while True:
         try:
@@ -83,12 +87,12 @@ print(port_number)
 if (protocol == "TCP"):
     socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     socket.connect((ip_address, port_number))
-    print("Connected")
+    print("TCP Server-Client Connected")
 
 
-# elif (protocol == "UDP"):
-#     socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-print("Session has been established.")
+elif (protocol == "UDP"):
+    socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    print("UDP Server-Client Connected")
 
 # print list of commands
 #TODO: Implement this in the help command coming from the server
@@ -113,8 +117,9 @@ while True:
             continue
     elif command_array[0] in ["put", "get", "summary"]:
         if len(command_array) == 2:
-            opcode = get_opcode(command_array[0])
-            file1_length_binary = get_file_length(command_array[1])
+            opcode = get_opcode(command_array[0]) # get opcode for command
+            file1_length_binary = get_file_length(command_array[1]) # get file name size in binary
+            file_name_binary = get_file_name_binary(command_array[1]) # get file name binary
             if file1_length_binary == -1:
                 print("File name is too long, please try again.")
                 continue
@@ -137,3 +142,6 @@ while True:
         continue
 
     # Send command to server
+    command = opcode + file1_length_binary + file_name_binary
+    socket.send(command.encode())
+    
