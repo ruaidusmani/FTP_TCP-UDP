@@ -80,9 +80,10 @@ print(port_number)
 
 # Connect to server based on protocol
 # TODO: Uncomment this after server.py created
-# if (protocol == "TCP"):
-#     socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-#     socket.connect((ip_address, port_number))
+if (protocol == "TCP"):
+    socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    socket.connect((ip_address, port_number))
+    print("Connected")
 
 
 # elif (protocol == "UDP"):
@@ -105,7 +106,7 @@ while True:
             if command_array[0] == "bye":
                 print("Session is terminated.")
                 break
-            elsif command_array[0] == "help":
+            elif command_array[0] == "help":
                 opcode = get_opcode(command_array[0])
         else:
             print("Invalid command, please try again.")
