@@ -13,24 +13,26 @@ def handle_tcp_client(client, addr):
         if not data:
             break
 
-        if data == "bye":
-            break
-        
-        opcode = opcode = data[:3]
-        file_length_binary = data[3:8]
-        file_name_binary = data[8:]
+        elif data == "10000000": 
+            print ("Help me pretty please")
+            continue
 
-        file_length = int(file_length_binary, 2)
-        # Decode file name binary to retrieve the file name
-        file_name = ''.join(chr(int(file_name_binary[i:i+8], 2)) for i in range(0, len(file_name_binary), 8))
+        else:
+            opcode = opcode = data[:3]
+            file_length_binary = data[3:8]
+            file_name_binary = data[8:]
 
-        # Perform actions based on the parsed command
-        # Example: Print the parsed command details
-        print("Received Command from TCP Client:")
-        print(f"Opcode: {opcode}")
-        print(f"File Length Binary: {file_length_binary}")
-        print(f"File Length: {file_length}")
-        print(f"File Name: {file_name}")
+            file_length = int(file_length_binary, 2)
+            # Decode file name binary to retrieve the file name
+            file_name = ''.join(chr(int(file_name_binary[i:i+8], 2)) for i in range(0, len(file_name_binary), 8))
+
+            # Perform actions based on the parsed command
+            # Example: Print the parsed command details
+            print("Received Command from TCP Client:")
+            print(f"Opcode: {opcode}")
+            print(f"File Length Binary: {file_length_binary}")
+            print(f"File Length: {file_length}")
+            print(f"File Name: {file_name}")
 
     client.close()
 
