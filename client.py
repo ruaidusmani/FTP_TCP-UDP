@@ -1,4 +1,5 @@
 import socket 
+import os
 
 def get_opcode(command):
     command_breakdown = command.split()
@@ -34,6 +35,16 @@ def get_file_length(command_file_name):
 def get_file_name_binary(command_file_name):
     binary_string = ''.join(format(ord(char), '08b') for char in command_file_name)
     return binary_string
+
+def handle_put_request(file):
+    file_size = os.path.getsize(file) # get file size in bytes
+    file_size_binary = format(file_size, '032b') # convert this to 32-bit (4 byte) binary
+
+    # Get file data
+    with open(file, 'rb') as f: # open file in binary mode
+        file_data_binary = f.read() # read file data
+        
+    return file_size_binary, file_data_binary
 
 def protocol_input():
     while True:
@@ -99,49 +110,79 @@ elif (protocol == "UDP"):
 print ("Commands are: bye, change, get, help, put, summary")
 
 # main loop
-while True:
+in_progress = True
+while in_progress:
     # Ask user for command
     full_command = input("")
     command_array = full_command.split()
 
-    # Check command validity
-    if command_array[0] in ["help", "bye"]:
-        if len(command_array) == 1:
-            if command_array[0] == "bye":
-                print("Session is terminated.")
-                break
-            elif command_array[0] == "help":
-                opcode = get_opcode(command_array[0])
-        else:
+    # Process the commands
+    if command_array[0] in ["help", "bye"]: # commands with no file name
+        if len(command_array) == 1: # check if there is only one command
+            
+            if command_array[0] == "bye": # closes client session
+                print("Session is terminated.") 
+                socket.close()
+                in_progress = False
+
+            elif command_array[0] == "help": # help message
+                opcode = get_opcode(command_array[0]) # get opcode for command
+                
+                #Send command to server
+                command = opcode + "00000"
+                socket.send(command.encode())
+
+        else: # invalid command handling
             print("Invalid command, please try again.")
             continue
-    elif command_array[0] in ["put", "get", "summary"]:
-        if len(command_array) == 2:
+
+    elif command_array[0] in ["put", "get", "summary"]: # commands with 1 file name
+        if len(command_array) == 2: # check if there are 2 commands
+        
             opcode = get_opcode(command_array[0]) # get opcode for command
             file1_length_binary = get_file_length(command_array[1]) # get file name size in binary
-            file_name_binary = get_file_name_binary(command_array[1]) # get file name binary
-            if file1_length_binary == -1:
+            
+            if file1_length_binary != -1: # check if file name is of appropriate length
+                file_name_binary = get_file_name_binary(command_array[1]) # get file name binary
+            else: 
                 print("File name is too long, please try again.")
                 continue
-        else:
+
+
+            if (command_array == "put"):
+                file_size_binary, file_data_binary = handle_put_request(command_array[1])
+                command = opcode + file1_length_binary + file_name_binary + file_size_binary + file_data_binary
+            else:  
+                command = opcode + file1_length_binary + file_name_binary
+
+            socket.send(command.encode())
+
+        else: # invalid command handling
             print("Invalid command, please try again.")
             continue
-    elif command_array[0] == "change":
+
+    elif command_array[0] == "change": # commands with 2 file names
         if len(command_array) == 3:
-            opcode = get_opcode(command_array[0])
-            file1_length_binary = get_file_length(command_array[1])
-            file2_length_binary = get_file_length(command_array[2])
-            if file1_length_binary == -1 and file2_length_binary == -1:
-                print("File name is too long, please try again.")
+            opcode = get_opcode(command_array[0]) # get opcode for command
+            file1_length_binary = get_file_length(command_array[1]) # get file1 name size in binary
+            file2_length_binary = get_file_length(command_array[2]) # get file2 name size in binary
+
+            if file1_length_binary != -1 and file2_length_binary != -1: # check if file name is of appropriate length
+                file1_name_binary = get_file_name_binary(command_array[1])
+                file2_name_binary = get_file_name_binary(command_array[2])
+
+            else: # returns -1 for having a long file_name
+                print("One of the two file names is too long, please try again.")
                 continue
-        else:
+
+            command = opcode + file1_length_binary + file1_name_binary + file2_length_binary + file2_name_binary
+
+        else: # invalid command handling
             print("Invalid command, please try again.")
             continue
-    else:
+
+    else: # completely wrong command handling
         print("Invalid command, please try again.")
         continue
 
-    # Send command to server
-    command = opcode + file1_length_binary + file_name_binary
-    socket.send(command.encode())
-    
+    # Receive response from server
