@@ -10,9 +10,9 @@ def get_opcode(command):
         opcode = "000"
     elif user_command == "get":
         opcode = "001"
-    elif user_command == "summary":
-        opcode = "010"
     elif user_command == "change":
+        opcode = "010"
+    elif user_command == "summary":
         opcode = "011"
     elif user_command == "help":
         opcode = "100"
