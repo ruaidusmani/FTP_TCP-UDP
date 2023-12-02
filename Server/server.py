@@ -47,10 +47,16 @@ def get_file_size_binary(file):
     file_size_binary = format(file_size, '032b') # convert this to 32-bit (4 byte) binary
     return str(file_size_binary)
 
+def string_to_binary(string):
+    binary_string = ''.join(format(ord(char), '08b') for char in string)
+    return str(binary_string)
+
+def help_binary_length(help_response_string_length):
+    help_response_string_binary = format(help_response_string_length, '05b')
+    return help_response_string_binary
+
 
 def handle_summary_request(data):
-    print("Received summary request from client")
-
     # Parse the command
     opcode = data[:3] # opcode 
     file_length_binary = data[3:8] # get file length binary
@@ -147,7 +153,36 @@ def handle_put_request(data):
     # print(f"File Name: {file_name}")
 
 
-# def handle_help_request():
+def handle_help_request(data):
+    # Parse the command
+    opcode = data[:3] # opcode
+    help_response_string = "bye change get help put summary"
+
+    help_msg_binary_length = help_binary_length(len(help_response_string))
+
+    help_response_string_binary = string_to_binary(help_response_string)
+    print ("Help response string binary = " + help_response_string_binary)
+    
+    # Response message sent to client
+    res_code = "110"
+    # Send file to client
+    length = help_msg_binary_length
+    help_data = help_response_string_binary
+
+    print ("Res code = ", res_code)
+    print ("Length = ", length)
+    print ("Help data = ", help_data)
+
+
+    # Response message send to client
+    response_message = res_code + length + help_data
+    # Send response message to client
+    print("Sending")
+    
+    print("Sent")
+
+    return response_message
+
 
 
 def handle_tcp_client(client, addr):
@@ -177,7 +212,7 @@ def handle_tcp_client(client, addr):
                 response_msg = handle_summary_request(data)
             case "100":
                 print ("Received help request from client")
-                # handle help
+                response_msg = handle_help_request(data)
             case _:
                 # handle invalid opcode
                 print ("Received invalid request. Try again.")
