@@ -94,8 +94,6 @@ def binary_to_string(binary_string):
     return result_string
 
 
-
-
 def response():
     print("we in here")
 
@@ -107,8 +105,6 @@ def response():
 
     # #utf-8 decode
     # data = data.decode("utf-8")
-
-
 
     if data:
         # parse msg to get file name and file size
@@ -148,7 +144,23 @@ def response():
     else:
         print("No data received from the server")
         return
-        
+
+def help_response():
+    data = socket.recv(4096).decode()  # Adjust the buffer size as needed
+
+    if data:
+        # parse msg to get file name and file size
+        res_code = data[:3]
+        res_length = data[3:8]
+        res_data = data[8:]
+
+        # convert res_data to string
+        res_data = binary_to_string(res_data)
+    
+        help_msg = "Commands are: " + res_data
+        print(help_msg)
+
+
 ###### MAIN ######
 
 # Ask user for decision on TCP or UDP
@@ -201,6 +213,7 @@ while in_progress:
                 #Send command to server
                 command = opcode + "00000"
                 socket.send(command.encode())
+                help_response()
 
         else: # invalid command handling
             print("Invalid command, please try again.")
