@@ -25,7 +25,7 @@ def get_file_length(command_file_name):
 
     binary_string = format(file_length, '05b')
 
-    print ("FILE LENGTH = " + str(file_length))  
+    # print ("FILE LENGTH = " + str(file_length))  
     if (file_length < 32):
         file_length_binary = format(file_length, '05b')
     else:
@@ -81,15 +81,84 @@ def get_ip_address_port():
         except socket.error:
             print("Invalid IP address or port number. Try again.")
 
+def binary_to_string(binary_string):
+    # Split the binary string into 8-bit chunks
+    chunks = [binary_string[i:i+8] for i in range(0, len(binary_string), 8)]
 
+    # Convert each 8-bit chunk to a character
+    characters = [chr(int(chunk, 2)) for chunk in chunks]
+
+    # Join the characters to form a string
+    result_string = ''.join(characters)
+
+    return result_string
+
+
+
+
+def response():
+    print("we in here")
+
+    print("problem.")
+
+    # try:
+    # Receive data
+    data = socket.recv(4096).decode()  # Adjust the buffer size as needed
+
+    # #utf-8 decode
+    # data = data.decode("utf-8")
+
+
+
+    if data:
+        # parse msg to get file name and file size
+        res_code = data[:3]
+        res_file_name_length_binary = data[3:8]
+        res_file_name_length = int(res_file_name_length_binary, 2)
+        print("res_file_name_binary_length = ", res_file_name_length)
+        res_file_name_byte_length = (res_file_name_length-1) * 8
+
+        res_file_name = data[8:8+res_file_name_byte_length]
+        print("length of binary string of res_file_name: ", len(res_file_name))
+        print("res_file_name bn: ", res_file_name)
+        res_file_name_str = binary_to_string(res_file_name)
+        print("res_file_name str: ", res_file_name_str)
+
+        res_file_size = data[8+res_file_name_byte_length:8+res_file_name_byte_length+32]
+        print("res_file_size bn: ", res_file_size)
+
+        res_file_data = data[8+res_file_name_byte_length+32:]
+        print("res_file_data bn: ", res_file_data)
+
+        res_file_data = ''.join(chr(int(res_file_data[i:i+8], 2)) for i in range(0, len(res_file_data), 8))
+        
+        # print response
+        print("Response from server:")
+        print(f"Response Code: {res_code}")
+        print(f"File Name Length: {res_file_name_length}")
+        print(f"File Name: {res_file_name_str}")
+        print(f"File Size: {res_file_size}")
+        print(f"File Data: {res_file_data}")
+
+        # Store file content into a file
+        file = open(res_file_name_str, "w")
+        file.write(res_file_data)
+        file.close()
+
+    else:
+        print("No data received from the server")
+        return
+        
 ###### MAIN ######
 
 # Ask user for decision on TCP or UDP
-protocol = protocol_input()
-print(protocol)
+# protocol = protocol_input()
+protocol = "TCP"
+# print(protocol)
 
 # IP Address and Port Number Input
-ip_address, port_number = get_ip_address_port()
+# ip_address, port_number = get_ip_address_port()
+ip_address, port_number = "127.0.0.1", int("12000")
 print(ip_address)
 print(port_number)
 
@@ -113,6 +182,7 @@ print ("Commands are: bye, change, get, help, put, summary")
 in_progress = True
 while in_progress:
     # Ask user for command
+    print("Enter command: ")
     full_command = input("")
     command_array = full_command.split()
 
@@ -156,6 +226,8 @@ while in_progress:
                 command = opcode + file1_length_binary + file_name_binary
 
             socket.send(command.encode())
+            response()
+            
 
         else: # invalid command handling
             print("Invalid command, please try again.")
@@ -184,5 +256,3 @@ while in_progress:
     else: # completely wrong command handling
         print("Invalid command, please try again.")
         continue
-
-    # Receive response from server
