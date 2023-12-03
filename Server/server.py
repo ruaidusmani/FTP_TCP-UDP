@@ -41,7 +41,6 @@ def get_file_data_binary(file_name):
 
     return str(file_data_binary)
 
-
 def get_file_size_binary(file):
     file_size = os.path.getsize(file) # get file size in bytes
     file_size_binary = format(file_size, '032b') # convert this to 32-bit (4 byte) binary
@@ -67,61 +66,49 @@ def handle_summary_request(data):
     # Decode file name binary to retrieve the file name
     file_name = ''.join(chr(int(file_name_binary[i:i+8], 2)) for i in range(0, len(file_name_binary), 8))
 
-    print ("Parsed file name ", file_name)
+    print("File NAME = " + file_name)
 
     if os.path.exists(file_name): # check if file exists in directory 
         # try: 
         with open(file_name, 'r') as file: # Open and read the file content
             file_content = file.read()
-            integer_array = [int(i) for i in file_content.split(',')] # store text in array of integers
+        
+        integer_array = [int(i) for i in file_content.split(',')] # store text in array of integers
 
-            # Perform max, min, and average 
-            max_val = max(integer_array)
-            min_val = min(integer_array)
-            avg_val = int(sum(integer_array) / len(integer_array))
+        # Perform max, min, and average 
+        max_val = max(integer_array)
+        min_val = min(integer_array)
+        avg_val = int(sum(integer_array) / len(integer_array))
 
-            maximum_string = f"Maximum of {file_name} is {max_val}"
-            minimum_string = f"Minimum of {file_name} is {min_val}"
-            average_string = f"Average of {file_name} is {avg_val}"
+        maximum_string = f"Maximum of {file_name} is {max_val}"
+        minimum_string = f"Minimum of {file_name} is {min_val}"
+        average_string = f"Average of {file_name} is {avg_val}"
 
-            # print(maximum_string)
-            # print(minimum_string)
-            # print(average_string)
+        summary_file_contents = maximum_string + "\n" + minimum_string + "\n" + average_string
 
-            summary_file_contents = maximum_string + "\n" + minimum_string + "\n" + average_string
+        summary_file_name = "summary_" + file_name.split('.')[0] + ".txt"
+        
+        with open(summary_file_name, 'w') as summary_file:
+            summary_file.write(summary_file_contents)
 
-            summary_file_name = "summary_" + file_name.split('.')[0] + ".txt"
+        # Send file to client
+        res_code = "010"
+        print("Res code = " + res_code)
+
+        file_length_binary = get_file_length(summary_file_name)
+        file_name_binary = get_file_name_binary(summary_file_name)
+        file_size_binary = get_file_size_binary(summary_file_name)
+        file_data_binary = get_file_data_binary(summary_file_name)
+
+        if os.path.exists(summary_file_name):
+            os.remove(summary_file_name)
+        else:
+            print("The file does not exist")
+        # Response message send to client
+        response_message = res_code + file_length_binary + file_name_binary + file_size_binary + file_data_binary
+
+        return response_message
             
-            with open(summary_file_name, 'w') as summary_file:
-                summary_file.write(summary_file_contents)
-
-            # Send file to client
-            res_code = "010"
-            print("Res code = " + res_code)
-
-            # NOT PRINTING
-            file_length_binary = get_file_length(summary_file_name)
-            file_name_binary = get_file_name_binary(summary_file_name)
-            file_size_binary = get_file_size_binary(summary_file_name)
-            file_data_binary = get_file_data_binary(summary_file_name)
-
-            print ("File length binary = " + file_length_binary)
-            print ("File name binary = " + file_name_binary)
-            print ("File size binary = " + file_size_binary)
-            print ("File data binary = " + file_data_binary)
-
-
-            # Response message send to client
-            response_message = res_code + file_length_binary + file_name_binary + file_size_binary + file_data_binary
-            # Send response message to client
-            print("Sending")
-            
-            print("Sent")
-
-            return response_message
-            
-            
-
     else: # If file is not in directory
         print(f"File '{file_name}' does not exist.")
 
@@ -132,26 +119,49 @@ def handle_put_request(data):
 
     # Parse the command
     opcode = data[:3] # opcode 
+    print(f"Opcode: {opcode}")
+
     file_length_binary = data[3:8] # get file length binary
-    #TODO: find logic to parse file_name binary in the array 
-    # probably by getting length of file_name_binary
-    # file_name_binary = data[8:] # get file name binary 
-    # file_size_binary = 
-    #  + file_data_binary
+    print(f"File Length Binary: {file_length_binary}")
 
     file_length = int(file_length_binary, 2) # convert binary to int for file length
-    
+    file_length_byte = (file_length-1) * 8 # get file length in bytes
+    print(f"File length in bytes: {file_length_byte}")
+
+    file_name_binary = data[8:8+file_length_byte] # get file name binary
+    print(f"File name binary: {file_name_binary}")
     # Decode file name binary to retrieve the file name
     file_name = ''.join(chr(int(file_name_binary[i:i+8], 2)) for i in range(0, len(file_name_binary), 8))
 
-    #using file name, open file and do the summary
+    file_size_binary = data[8+file_length_byte:8+file_length_byte+32] # get file size binary
+    file_size = int(file_size_binary, 2) # convert binary to int for file length
+    print(f"File size binary: {file_size_binary}")
+    print(f"File size: {file_size}")
+
+    file_data_binary = data[8+file_length_byte+32:] # get file data binary
+    print(f"File data binary: {file_data_binary}")
+    # Decode file data binary to retrieve the file data
+    file_data = ''.join(chr(int(file_data_binary[i:i+8], 2)) for i in range(0, len(file_data_binary), 8))
 
     # print("Received Command from TCP Client:")
-    # print(f"Opcode: {opcode}")
-    # print(f"File Length Binary: {file_length_binary}")
-    # print(f"File Length: {file_length}")
-    # print(f"File Name: {file_name}")
+    print(f"Opcode: {opcode}")
+    print(f"File Length Binary: {file_length_binary}")
+    print(f"File Length: {file_length}")
+    print(f"File Name: {file_name}")
+    print(f"File Data: {file_data}")
 
+    # Put file on server
+    with open(file_name, 'w') as file:
+        file.write(file_data)
+
+    # Send response to client
+    res_code = "000"
+    print("Res code = " + res_code)
+    
+    # Response message send to client
+    response_message = res_code + "00000"
+
+    return response_message
 
 def handle_help_request(data):
     # Parse the command
@@ -163,27 +173,15 @@ def handle_help_request(data):
     help_response_string_binary = string_to_binary(help_response_string)
     print ("Help response string binary = " + help_response_string_binary)
     
-    # Response message sent to client
+    # Response message format
     res_code = "110"
-    # Send file to client
     length = help_msg_binary_length
     help_data = help_response_string_binary
 
-    print ("Res code = ", res_code)
-    print ("Length = ", length)
-    print ("Help data = ", help_data)
-
-
     # Response message send to client
     response_message = res_code + length + help_data
-    # Send response message to client
-    print("Sending")
-    
-    print("Sent")
 
     return response_message
-
-
 
 def handle_tcp_client(client, addr):
     print("Connected by TCP at ", addr)
@@ -199,8 +197,8 @@ def handle_tcp_client(client, addr):
 
         match (opcode):
             case "000":
+                print ("Received put request from client")
                 response_msg = handle_put_request(data)
-                # handle put
             case "001":
                 print ("Received get request from client")
                 # handle get

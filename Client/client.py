@@ -36,15 +36,31 @@ def get_file_name_binary(command_file_name):
     binary_string = ''.join(format(ord(char), '08b') for char in command_file_name)
     return binary_string
 
-def handle_put_request(file):
+def get_file_size_binary(file):
     file_size = os.path.getsize(file) # get file size in bytes
     file_size_binary = format(file_size, '032b') # convert this to 32-bit (4 byte) binary
+    return str(file_size_binary)
 
-    # Get file data
-    with open(file, 'rb') as f: # open file in binary mode
-        file_data_binary = f.read() # read file data
+def get_file_data_binary(file):
+    with open(file, 'r') as f: # open file in binary mode
+        file_data = f.read() # read file data
+
+    file_data_binary = ""
+    for i in range(0, len(file_data)):
+        # convert each character to binary
+        file_data_binary += format(ord(file_data[i]), '08b')
+
+    return str(file_data_binary)
+
+# def handle_put_request(file):
+#     file_size = os.path.getsize(file) # get file size in bytes
+#     file_size_binary = format(file_size, '032b') # convert this to 32-bit (4 byte) binary
+
+#     # Get file data
+#     with open(file, 'rb') as f: # open file in binary mode
+#         file_data_binary = f.read() # read file data
         
-    return file_size_binary, file_data_binary
+#     return file_size_binary, file_data_binary
 
 def protocol_input():
     while True:
@@ -95,57 +111,72 @@ def binary_to_string(binary_string):
 
 
 def response():
-    print("we in here")
-
-    print("problem.")
-
-    # try:
-    # Receive data
     data = socket.recv(4096).decode()  # Adjust the buffer size as needed
 
-    # #utf-8 decode
-    # data = data.decode("utf-8")
-
     if data:
-        # parse msg to get file name and file size
         res_code = data[:3]
-        res_file_name_length_binary = data[3:8]
-        res_file_name_length = int(res_file_name_length_binary, 2)
-        print("res_file_name_binary_length = ", res_file_name_length)
-        res_file_name_byte_length = (res_file_name_length-1) * 8
 
-        res_file_name = data[8:8+res_file_name_byte_length]
-        print("length of binary string of res_file_name: ", len(res_file_name))
-        print("res_file_name bn: ", res_file_name)
-        res_file_name_str = binary_to_string(res_file_name)
-        print("res_file_name str: ", res_file_name_str)
-
-        res_file_size = data[8+res_file_name_byte_length:8+res_file_name_byte_length+32]
-        print("res_file_size bn: ", res_file_size)
-
-        res_file_data = data[8+res_file_name_byte_length+32:]
-        print("res_file_data bn: ", res_file_data)
-
-        res_file_data = ''.join(chr(int(res_file_data[i:i+8], 2)) for i in range(0, len(res_file_data), 8))
-        
-        # print response
-        print("Response from server:")
-        print(f"Response Code: {res_code}")
-        print(f"File Name Length: {res_file_name_length}")
-        print(f"File Name: {res_file_name_str}")
-        print(f"File Size: {res_file_size}")
-        print(f"File Data: {res_file_data}")
-
-        # Store file content into a file
-        file = open(res_file_name_str, "w")
-        file.write(res_file_data)
-        file.close()
+        if res_code == "000":
+            print("File successfully transferred.")
+        elif res_code == "010":
+            summary_response(data)
 
     else:
         print("No data received from the server")
         return
 
+
+def summary_response(data):
+    # print("we in here")
+
+    # print("problem.")
+
+    # # try:
+    # # Receive data
+    # data = socket.recv(4096).decode()  # Adjust the buffer size as needed
+
+    # if data:
+        # parse msg to get file name and file size
+    res_code = data[:3]
+    res_file_name_length_binary = data[3:8]
+    res_file_name_length = int(res_file_name_length_binary, 2)
+    print("res_file_name_binary_length = ", res_file_name_length)
+    res_file_name_byte_length = (res_file_name_length-1) * 8
+
+    res_file_name = data[8:8+res_file_name_byte_length]
+    print("length of binary string of res_file_name: ", len(res_file_name))
+    print("res_file_name bn: ", res_file_name)
+    res_file_name_str = binary_to_string(res_file_name)
+    print("res_file_name str: ", res_file_name_str)
+
+    res_file_size = data[8+res_file_name_byte_length:8+res_file_name_byte_length+32]
+    print("res_file_size bn: ", res_file_size)
+
+    res_file_data = data[8+res_file_name_byte_length+32:]
+    print("res_file_data bn: ", res_file_data)
+
+    res_file_data = ''.join(chr(int(res_file_data[i:i+8], 2)) for i in range(0, len(res_file_data), 8))
+    
+    # print response
+    print("Response from server:")
+    print(f"Response Code: {res_code}")
+    print(f"File Name Length: {res_file_name_length}")
+    print(f"File Name: {res_file_name_str}")
+    print(f"File Size: {res_file_size}")
+    print(f"File Data: {res_file_data}")
+
+    # Store file content into a file
+    file = open(res_file_name_str, "w")
+    file.write(res_file_data)
+    file.close()
+
+    print("Summary Done")
+    # else:
+        # print("No data received from the server")
+        # return
+
 def help_response():
+    print("we in here")
     data = socket.recv(4096).decode()  # Adjust the buffer size as needed
 
     if data:
@@ -180,7 +211,6 @@ if (protocol == "TCP"):
     socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     socket.connect((ip_address, port_number))
     print("TCP Server-Client Connected")
-
 
 elif (protocol == "UDP"):
     socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -232,8 +262,14 @@ while in_progress:
                 continue
 
 
-            if (command_array == "put"):
-                file_size_binary, file_data_binary = handle_put_request(command_array[1])
+            if (command_array[0] == "put"):
+                file_size_binary = get_file_size_binary(command_array[1])
+                file_data_binary = get_file_data_binary(command_array[1])
+                print("file_length_binary: ", file1_length_binary)
+                print("file_name_binary: ", file_name_binary)
+                print("file_size_binary: ", file_size_binary)
+                print("file_data_binary: ", file_data_binary)
+
                 command = opcode + file1_length_binary + file_name_binary + file_size_binary + file_data_binary
             else:  
                 command = opcode + file1_length_binary + file_name_binary
