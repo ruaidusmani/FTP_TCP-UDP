@@ -1,66 +1,8 @@
 import socket 
 import os
-
-def get_opcode(command):
-    command_breakdown = command.split()
-    user_command = command_breakdown[0]
-    opcode = ""
-
-    if user_command == "put":
-        opcode = "000"
-    elif user_command == "get":
-        opcode = "001"
-    elif user_command == "change":
-        opcode = "010"
-    elif user_command == "summary":
-        opcode = "011"
-    elif user_command == "help":
-        opcode = "100"
-
-    return opcode
-
-def get_file_length(command_file_name):
-    file_length = len(command_file_name) + 1
-    #convert file length to string
-
-    binary_string = format(file_length, '05b')
-
-    # print ("FILE LENGTH = " + str(file_length))  
-    if (file_length < 32):
-        file_length_binary = format(file_length, '05b')
-    else:
-        file_length_binary = -1  # -1 means that the file name is too long
-    return file_length_binary
-
-def get_file_name_binary(command_file_name):
-    binary_string = ''.join(format(ord(char), '08b') for char in command_file_name)
-    return binary_string
-
-def get_file_size_binary(file):
-    file_size = os.path.getsize(file) # get file size in bytes
-    file_size_binary = format(file_size, '032b') # convert this to 32-bit (4 byte) binary
-    return str(file_size_binary)
-
-def get_file_data_binary(file):
-    with open(file, 'r') as f: # open file in binary mode
-        file_data = f.read() # read file data
-
-    file_data_binary = ""
-    for i in range(0, len(file_data)):
-        # convert each character to binary
-        file_data_binary += format(ord(file_data[i]), '08b')
-
-    return str(file_data_binary)
-
-# def handle_put_request(file):
-#     file_size = os.path.getsize(file) # get file size in bytes
-#     file_size_binary = format(file_size, '032b') # convert this to 32-bit (4 byte) binary
-
-#     # Get file data
-#     with open(file, 'rb') as f: # open file in binary mode
-#         file_data_binary = f.read() # read file data
-        
-#     return file_size_binary, file_data_binary
+import sys
+sys.path.insert(0, '../Controller')
+from control_module import controller
 
 def protocol_input():
     while True:
@@ -120,6 +62,14 @@ def response():
             print("File successfully transferred.")
         elif res_code == "010":
             summary_response(data)
+        elif res_code == "011":
+            print("File does not exist on server.")
+        elif res_code == "100":
+            print("Error - Unknown Request")
+        elif res_code == "101":
+            print("Unsuccessful change")
+        elif res_code == "110":
+            help_response(data)
 
     else:
         print("No data received from the server")
@@ -175,21 +125,21 @@ def summary_response(data):
         # print("No data received from the server")
         # return
 
-def help_response():
-    print("we in here")
-    data = socket.recv(4096).decode()  # Adjust the buffer size as needed
+def help_response(data):
+    # print("we in here")
+    # data = socket.recv(4096).decode()  # Adjust the buffer size as needed
 
-    if data:
+    # if data:
         # parse msg to get file name and file size
-        res_code = data[:3]
-        res_length = data[3:8]
-        res_data = data[8:]
+    res_code = data[:3]
+    res_length = data[3:8]
+    res_data = data[8:]
 
-        # convert res_data to string
-        res_data = binary_to_string(res_data)
-    
-        help_msg = "Commands are: " + res_data
-        print(help_msg)
+    # convert res_data to string
+    res_data = binary_to_string(res_data)
+
+    help_msg = "Commands are: " + res_data
+    print(help_msg)
 
 
 ###### MAIN ######
@@ -238,12 +188,13 @@ while in_progress:
                 in_progress = False
 
             elif command_array[0] == "help": # help message
-                opcode = get_opcode(command_array[0]) # get opcode for command
+                opcode = controller.get_opcode(command_array[0]) # get opcode for command
                 
                 #Send command to server
                 command = opcode + "00000"
+
                 socket.send(command.encode())
-                help_response()
+                response()
 
         else: # invalid command handling
             print("Invalid command, please try again.")
@@ -251,20 +202,19 @@ while in_progress:
 
     elif command_array[0] in ["put", "get", "summary"]: # commands with 1 file name
         if len(command_array) == 2: # check if there are 2 commands
-        
-            opcode = get_opcode(command_array[0]) # get opcode for command
-            file1_length_binary = get_file_length(command_array[1]) # get file name size in binary
+            opcode = controller.get_opcode(command_array[0]) # get opcode for command
+            file1_length_binary = controller.get_file_length(command_array[1]) # get file name size in binary
             
             if file1_length_binary != -1: # check if file name is of appropriate length
-                file_name_binary = get_file_name_binary(command_array[1]) # get file name binary
+                file_name_binary = controller.get_file_name_binary(command_array[1]) # get file name binary
             else: 
                 print("File name is too long, please try again.")
                 continue
 
 
             if (command_array[0] == "put"):
-                file_size_binary = get_file_size_binary(command_array[1])
-                file_data_binary = get_file_data_binary(command_array[1])
+                file_size_binary = controller.get_file_size_binary(command_array[1])
+                file_data_binary = controller.get_file_data_binary(command_array[1])
                 print("file_length_binary: ", file1_length_binary)
                 print("file_name_binary: ", file_name_binary)
                 print("file_size_binary: ", file_size_binary)
@@ -284,13 +234,13 @@ while in_progress:
 
     elif command_array[0] == "change": # commands with 2 file names
         if len(command_array) == 3:
-            opcode = get_opcode(command_array[0]) # get opcode for command
-            file1_length_binary = get_file_length(command_array[1]) # get file1 name size in binary
-            file2_length_binary = get_file_length(command_array[2]) # get file2 name size in binary
+            opcode = controller.get_opcode(command_array[0]) # get opcode for command
+            file1_length_binary = controller.get_file_length(command_array[1]) # get file1 name size in binary
+            file2_length_binary = controller.get_file_length(command_array[2]) # get file2 name size in binary
 
             if file1_length_binary != -1 and file2_length_binary != -1: # check if file name is of appropriate length
-                file1_name_binary = get_file_name_binary(command_array[1])
-                file2_name_binary = get_file_name_binary(command_array[2])
+                file1_name_binary = controller.get_file_name_binary(command_array[1])
+                file2_name_binary = controller.get_file_name_binary(command_array[2])
 
             else: # returns -1 for having a long file_name
                 print("One of the two file names is too long, please try again.")

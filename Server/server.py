@@ -4,56 +4,14 @@ import concurrent.futures
 import time
 import os
 import string
+import sys
+sys.path.insert(0, '../Controller')
+from control_module import controller
 
 HOST = "127.0.0.1" #localhost
 PORT = 12000 # listening port
 
 MAX_THREADS = 10
-
-def get_file_length(file_name):
-    file_length = len(file_name) + 1
-    #convert file length to string
-
-    binary_string = format(file_length, '05b')
-
-    # print ("FILE LENGTH = " + str(file_length))  
-    if (file_length < 32):
-        file_length_binary = format(file_length, '05b')
-    else:
-        file_length_binary = -1  # -1 means that the file name is too long
-    return str(file_length_binary)
-
-def get_file_name_binary(file_name):
-    binary_string = ''.join(format(ord(char), '08b') for char in file_name)
-    print ("Binary string in func: ")
-    print (binary_string)
-
-    return str(binary_string)
-
-def get_file_data_binary(file_name):
-    with open(file_name, 'r') as f: # open file in binary mode
-        file_data = f.read() # read file data
-
-    file_data_binary = ""
-    for i in range(0, len(file_data)):
-        # convert each character to binary
-        file_data_binary += format(ord(file_data[i]), '08b')
-
-    return str(file_data_binary)
-
-def get_file_size_binary(file):
-    file_size = os.path.getsize(file) # get file size in bytes
-    file_size_binary = format(file_size, '032b') # convert this to 32-bit (4 byte) binary
-    return str(file_size_binary)
-
-def string_to_binary(string):
-    binary_string = ''.join(format(ord(char), '08b') for char in string)
-    return str(binary_string)
-
-def help_binary_length(help_response_string_length):
-    help_response_string_binary = format(help_response_string_length, '05b')
-    return help_response_string_binary
-
 
 def handle_summary_request(data):
     # Parse the command
@@ -95,10 +53,10 @@ def handle_summary_request(data):
         res_code = "010"
         print("Res code = " + res_code)
 
-        file_length_binary = get_file_length(summary_file_name)
-        file_name_binary = get_file_name_binary(summary_file_name)
-        file_size_binary = get_file_size_binary(summary_file_name)
-        file_data_binary = get_file_data_binary(summary_file_name)
+        file_length_binary = controller.get_file_length(summary_file_name)
+        file_name_binary = controller.get_file_name_binary(summary_file_name)
+        file_size_binary = controller.get_file_size_binary(summary_file_name)
+        file_data_binary = controller.get_file_data_binary(summary_file_name)
 
         if os.path.exists(summary_file_name):
             os.remove(summary_file_name)
@@ -168,9 +126,12 @@ def handle_help_request(data):
     opcode = data[:3] # opcode
     help_response_string = "bye change get help put summary"
 
-    help_msg_binary_length = help_binary_length(len(help_response_string))
+    # help_msg_binary_length = help_binary_length(len(help_response_string))
+    
+    # Will give length of 31 which is 11111 in binary
+    help_msg_binary_length = format(len(help_response_string), '05b')
 
-    help_response_string_binary = string_to_binary(help_response_string)
+    help_response_string_binary = controller.string_to_binary(help_response_string)
     print ("Help response string binary = " + help_response_string_binary)
     
     # Response message format
