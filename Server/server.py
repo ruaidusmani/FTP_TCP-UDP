@@ -268,6 +268,7 @@ def handle_tcp_client(client, addr):
         
         client.send(response_msg.encode())
 
+
 def tcp_server():
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as tcp_socket:
         tcp_socket.bind((HOST,PORT))
@@ -283,37 +284,45 @@ def tcp_server():
             # # Handle the client connection in a separate thread or function
             handle_tcp_client(client_socket, client_address)
             # response = handle_tcp_client(client_socket, client_address)
-
             
+def udp_server():
+    with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as udp_socket:
+        udp_socket.bind((HOST, PORT))
 
-        # while True:
-        #     client, addr = tcp_socket.accept()
-        #     client_thread = threading.Thread(target=handle_tcp_client, args=(client, addr))
-        #     client_thread.start()
+        print("Server is waiting for UDP messages")
 
-        # with concurrent.futures.ThreadPoolExecutor(max_workers=MAX_THREADS) as executor:
-        #     while True:
-        #         client, addr = tcp_socket.accept()
-        #         executor.submit(handle_tcp_client, client, addr)
-        #         print("Accepted a connection")
-        #         time.sleep(10)
+        while True:
+            msg, addr = udp_socket.recvfrom(1024)  # Buffer size is 1024 bytes
+            data = msg.decode()
 
-        
-        # conn,addr = tcp_socket.accept()
-        
-        # with conn:
-        #     print("Connected by TCP at ", addr)
-        #     print("Success")
-            
+            print(f"Received message from {addr}: {data}")
 
-# def udp_server():
-#     with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as udp_socket:
-#         udp_socket.bind((HOST,PORT))
-#         print("UDP Server is waiting for client connection")
-#         conn,addr = udp_socket.recvfrom(1024)
-#         with conn:
-#             print("Connected by UDP at ", addr)
-#             print("Success")
+            # Check command opcode and handle requests based on it
+            opcode = data[:3]
+
+            match (opcode):
+                case "000":
+                    print ("Received put request from client")
+                    response_msg = handle_put_request(data)
+                case "001":
+                    print ("Received get request from client")
+                    response_msg = handle_get_request(data)
+                case "010":
+                    print ("Received change request from client")
+                    response_msg = handle_change_request(data)
+                case "011":
+                    print ("Received summary request from client")
+                    response_msg = handle_summary_request(data)
+                case "100":
+                    print ("Received help request from client")
+                    response_msg = handle_help_request(data)
+                case _:
+                    # handle invalid opcode
+                    print ("Received invalid request. Try again.")
+                    response_msg = "100" + "00000"
+                    
+            response_msg_bytes = str.encode(response_msg)
+            udp_socket.sendto(response_msg_bytes, addr)
 
 
 # tcp_thread = threading.Thread(target=tcp_server)
@@ -324,4 +333,5 @@ def tcp_server():
 
 # time.sleep(10)
 
-tcp_server()
+# tcp_server()
+udp_server()
