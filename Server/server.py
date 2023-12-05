@@ -70,6 +70,42 @@ def handle_summary_request(data):
     else: # If file is not in directory
         print(f"File '{file_name}' does not exist.")
 
+def handle_get_request(data):
+    print("Received get request from client")
+
+    # Parse the command
+    opcode = data[:3] # opcode
+    file_length_binary = data[3:8] # get file length binary
+    file_name_binary = data[8:] # get file name binary
+
+    file_length = int(file_length_binary, 2) # convert binary to int for file length
+
+    # Decode file name binary to retrieve the file name
+    file_name = ''.join(chr(int(file_name_binary[i:i+8], 2)) for i in range(0, len(file_name_binary), 8))
+
+    print("File NAME = " + file_name)
+
+    if os.path.exists(file_name): # check if file exists in directory
+        # try:
+        with open(file_name, 'r') as file:
+            file_content = file.read()
+
+        # Send file to client
+        res_code = "001"
+        print("Res code = " + res_code)
+
+        file_length_binary = controller.get_file_length(file_name)
+        file_name_binary = controller.get_file_name_binary(file_name)
+        file_size_binary = controller.get_file_size_binary(file_name)
+        file_data_binary = controller.get_file_data_binary(file_name)
+        
+        # Response message send to client
+        response_message = res_code + file_length_binary + file_name_binary + file_size_binary + file_data_binary
+
+        return response_message
+    
+    else: # If file is not in directory
+        print(f"File '{file_name}' does not exist.")
 
         
 def handle_put_request(data):
@@ -151,7 +187,7 @@ def handle_tcp_client(client, addr):
     while True:
         data = client.recv(1024).decode()
         if not data: # checks if data is empty
-            break
+            continue
 
         # Check command opcode and handle requests based of it
         opcode = data[:3]
@@ -162,10 +198,10 @@ def handle_tcp_client(client, addr):
                 response_msg = handle_put_request(data)
             case "001":
                 print ("Received get request from client")
-                # handle get
+                response_msg = handle_get_request(data)
             case "010":
                 print ("Received change request from client")
-                # handle change
+                response_msg = handle_change_request(data)
             case "011":
                 print ("Received summary request from client")
                 response_msg = handle_summary_request(data)
@@ -175,8 +211,7 @@ def handle_tcp_client(client, addr):
             case _:
                 # handle invalid opcode
                 print ("Received invalid request. Try again.")
-                
-        return response_msg
+        client.send(response_msg.encode())
 
 def tcp_server():
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as tcp_socket:
@@ -190,10 +225,11 @@ def tcp_server():
             client_socket, client_address = tcp_socket.accept()
             print(f"Accepted connection from {client_address}")
 
-            # Handle the client connection in a separate thread or function
-            response = handle_tcp_client(client_socket, client_address)
+            # # Handle the client connection in a separate thread or function
+            handle_tcp_client(client_socket, client_address)
+            # response = handle_tcp_client(client_socket, client_address)
 
-            client_socket.send(response.encode())
+            
 
         # while True:
         #     client, addr = tcp_socket.accept()

@@ -54,12 +54,14 @@ def binary_to_string(binary_string):
 
 def response():
     data = socket.recv(4096).decode()  # Adjust the buffer size as needed
-
+    
     if data:
         res_code = data[:3]
 
         if res_code == "000":
             print("File successfully transferred.")
+        elif res_code == "001":
+            get_response(data)
         elif res_code == "010":
             summary_response(data)
         elif res_code == "011":
@@ -126,7 +128,7 @@ def summary_response(data):
         # return
 
 def help_response(data):
-    # print("we in here")
+    print("we in here")
     # data = socket.recv(4096).decode()  # Adjust the buffer size as needed
 
     # if data:
@@ -141,6 +143,47 @@ def help_response(data):
     help_msg = "Commands are: " + res_data
     print(help_msg)
 
+def get_response(data):
+    print("Received put request from server")
+
+    # Parse the command
+    opcode = data[:3] # opcode 
+    print(f"Opcode: {opcode}")
+
+    file_length_binary = data[3:8] # get file length binary
+    print(f"File Length Binary: {file_length_binary}")
+
+    file_length = int(file_length_binary, 2) # convert binary to int for file length
+    file_length_byte = (file_length-1) * 8 # get file length in bytes
+    print(f"File length in bytes: {file_length_byte}")
+
+    file_name_binary = data[8:8+file_length_byte] # get file name binary
+    print(f"File name binary: {file_name_binary}")
+    # Decode file name binary to retrieve the file name
+    file_name = ''.join(chr(int(file_name_binary[i:i+8], 2)) for i in range(0, len(file_name_binary), 8))
+
+    file_size_binary = data[8+file_length_byte:8+file_length_byte+32] # get file size binary
+    file_size = int(file_size_binary, 2) # convert binary to int for file length
+    print(f"File size binary: {file_size_binary}")
+    print(f"File size: {file_size}")
+
+    file_data_binary = data[8+file_length_byte+32:] # get file data binary
+    print(f"File data binary: {file_data_binary}")
+    # Decode file data binary to retrieve the file data
+    file_data = ''.join(chr(int(file_data_binary[i:i+8], 2)) for i in range(0, len(file_data_binary), 8))
+
+    # print("Received Command from TCP Server:")
+    print(f"Opcode: {opcode}")
+    print(f"File Length Binary: {file_length_binary}")
+    print(f"File Length: {file_length}")
+    print(f"File Name: {file_name}")
+    print(f"File Data: {file_data}")
+
+    # Put file on Client
+    with open(file_name, 'w') as file:
+        file.write(file_data)
+
+    print(f"{file_name} has been downloaded successfully.")
 
 ###### MAIN ######
 
@@ -178,10 +221,10 @@ while in_progress:
     full_command = input("")
     command_array = full_command.split()
 
+
     # Process the commands
     if command_array[0] in ["help", "bye"]: # commands with no file name
         if len(command_array) == 1: # check if there is only one command
-            
             if command_array[0] == "bye": # closes client session
                 print("Session is terminated.") 
                 socket.close()
@@ -192,7 +235,7 @@ while in_progress:
                 
                 #Send command to server
                 command = opcode + "00000"
-
+                
                 socket.send(command.encode())
                 response()
 
