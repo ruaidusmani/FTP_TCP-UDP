@@ -51,10 +51,23 @@ def binary_to_string(binary_string):
 
     return result_string
 
+def send_request():
+    if (protocol == "TCP"):
+        socket.send(command.encode())
+    elif (protocol == "UDP"):
+        socket.sendto(command.encode(), (ip_address, port_number))
+
+def recv_response():
+    if (protocol == "TCP"):
+        data = socket.recv(4096).decode()
+    elif (protocol == "UDP"):
+        msg, client = socket.recvfrom(4096)
+        data = msg.decode()
+    return data
 
 def response():
-    data = socket.recv(4096).decode()  # Adjust the buffer size as needed
-    
+    # data = socket.recv(4096).decode()  # Adjust the buffer size as needed
+    data = recv_response()
     if data:
         res_code = data[:3]
         res_op_code = data[-3:]
@@ -193,7 +206,8 @@ def get_response(data):
 
 # Ask user for decision on TCP or UDP
 # protocol = protocol_input()
-protocol = "TCP"
+# protocol = "TCP"
+protocol = "UDP"
 # print(protocol)
 
 # IP Address and Port Number Input
@@ -239,8 +253,10 @@ while in_progress:
                 
                 #Send command to server
                 command = opcode + "00000"
-
-                socket.send(command.encode())
+                print("PROTOCOL USED = ", protocol) 
+                send_request()
+                # socket.send(command.encode())
+                print("PROTOCOL RECV = ", protocol) 
                 response()
 
         else: # invalid command handling
@@ -274,7 +290,10 @@ while in_progress:
             else:  
                 command = opcode + file1_length_binary + file_name_binary
 
-            socket.send(command.encode())
+            print("PROTOCOL USED = ", protocol) 
+            send_request()
+            # socket.send(command.encode())
+            print("PROTOCOL RECV = ", protocol)
             response()
             
 
@@ -298,7 +317,8 @@ while in_progress:
 
             command = opcode + file1_length_binary + file1_name_binary + file2_length_binary + file2_name_binary
 
-            socket.send(command.encode())
+            send_request()
+            # socket.send(command.encode())
             response()
 
         else: # invalid command handling
