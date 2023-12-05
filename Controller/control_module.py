@@ -38,12 +38,16 @@ class controller:
 
     @staticmethod
     def get_file_size_binary(file):
+        if not os.path.isfile(file):
+            return -1
         file_size = os.path.getsize(file) # get file size in bytes
         file_size_binary = format(file_size, '032b') # convert this to 32-bit (4 byte) binary
         return str(file_size_binary)
 
     @staticmethod
     def get_file_data_binary(file):
+        if not os.path.isfile(file):
+            return -1
         with open(file, 'r') as f: # open file in binary mode
             file_data = f.read() # read file data
 

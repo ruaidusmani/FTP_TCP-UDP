@@ -148,7 +148,7 @@ def help_response(data):
     print(help_msg)
 
 def get_response(data):
-    print("Received put request from server")
+    print("Received get request from server")
 
     # Parse the command
     opcode = data[:3] # opcode 
@@ -183,7 +183,7 @@ def get_response(data):
     print(f"File Name: {file_name}")
     print(f"File Data: {file_data}")
 
-    # Put file on Client
+    # Get file from Server
     with open(file_name, 'w') as file:
         file.write(file_data)
 
@@ -261,6 +261,9 @@ while in_progress:
 
             if (command_array[0] == "put"):
                 file_size_binary = controller.get_file_size_binary(command_array[1])
+                if (file_size_binary == -1):
+                    print("File not found.")
+                    continue
                 file_data_binary = controller.get_file_data_binary(command_array[1])
                 print("file_length_binary: ", file1_length_binary)
                 print("file_name_binary: ", file_name_binary)

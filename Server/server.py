@@ -62,6 +62,7 @@ def handle_summary_request(data):
             os.remove(summary_file_name)
         else:
             print("The file does not exist")
+            return "011" + "00000"
         # Response message send to client
         response_message = res_code + file_length_binary + file_name_binary + file_size_binary + file_data_binary
 
@@ -106,6 +107,7 @@ def handle_get_request(data):
     
     else: # If file is not in directory
         print(f"File '{file_name}' does not exist.")
+        return "011" + "00000"
 
         
 def handle_put_request(data):
@@ -193,6 +195,10 @@ def handle_change_request(data):
     print(f"Old file name: {old_file_name}")
     print(f"New file name: {new_file_name}")
 
+    if (os.path.exists(new_file_name)):
+        response_message = "101" + "00000"
+        return response_message
+    
     os.rename(old_file_name, new_file_name)
 
     # Send response to client
@@ -258,6 +264,8 @@ def handle_tcp_client(client, addr):
             case _:
                 # handle invalid opcode
                 print ("Received invalid request. Try again.")
+                response_msg = "100" + "00000"
+        
         client.send(response_msg.encode())
 
 def tcp_server():
