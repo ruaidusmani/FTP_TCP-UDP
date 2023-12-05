@@ -57,9 +57,13 @@ def response():
     
     if data:
         res_code = data[:3]
+        res_op_code = data[-3:]
 
         if res_code == "000":
-            print("File successfully transferred.")
+            if (res_op_code == "010"):
+                print("File name has been changed.")
+            else:
+                print("File has been uploaded successfully.")
         elif res_code == "001":
             get_response(data)
         elif res_code == "010":
@@ -235,7 +239,7 @@ while in_progress:
                 
                 #Send command to server
                 command = opcode + "00000"
-                
+
                 socket.send(command.encode())
                 response()
 
@@ -290,6 +294,9 @@ while in_progress:
                 continue
 
             command = opcode + file1_length_binary + file1_name_binary + file2_length_binary + file2_name_binary
+
+            socket.send(command.encode())
+            response()
 
         else: # invalid command handling
             print("Invalid command, please try again.")

@@ -157,6 +157,53 @@ def handle_put_request(data):
 
     return response_message
 
+def handle_change_request(data):
+    print("Received change request from client")
+
+    # Parse the command
+    opcode = data[:3] # opcode 
+    print(f"Opcode: {opcode}")
+
+    old_file_length_binary = data[3:8] # get file length binary
+    print(f"File Length Binary: {old_file_length_binary}")
+
+    old_file_length = int(old_file_length_binary, 2) # convert binary to int for file length
+    old_file_length_byte = (old_file_length-1) * 8 # get file length in bytes
+    print(f"File length in bytes: {old_file_length_byte}")
+
+    old_file_name_binary = data[8:8+old_file_length_byte] # get file name binary
+    print(f"File name binary: {old_file_name_binary}")
+    # Decode file name binary to retrieve the file name
+    old_file_name = ''.join(chr(int(old_file_name_binary[i:i+8], 2)) for i in range(0, len(old_file_name_binary), 8))
+
+    new_file_length_binary = data[8+old_file_length_byte:8+old_file_length_byte+5] # get file length binary
+    print(f"File Length Binary: {new_file_length_binary}")
+
+    new_file_length = int(new_file_length_binary, 2) # convert binary to int for file length
+    new_file_length_byte = (new_file_length-1) * 8 # get file length in bytes
+    print(f"File length in bytes: {new_file_length_byte}")
+
+    new_file_name_binary = data[8+old_file_length_byte+5:] # get file name binary
+    print(f"File name binary: {new_file_name_binary}")
+    # Decode file name binary to retrieve the file name
+    new_file_name = ''.join(chr(int(new_file_name_binary[i:i+8], 2)) for i in range(0, len(new_file_name_binary), 8))
+
+    # print("Received Command from TCP Client:")
+    print(f"Opcode: {opcode}")
+    print(f"Old file name: {old_file_name}")
+    print(f"New file name: {new_file_name}")
+
+    os.rename(old_file_name, new_file_name)
+
+    # Send response to client
+    res_code = "000"
+    print("Res code = " + res_code)
+    
+    # Response message send to client
+    response_message = res_code + "00" + opcode
+
+    return response_message
+
 def handle_help_request(data):
     # Parse the command
     opcode = data[:3] # opcode
