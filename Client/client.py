@@ -51,35 +51,78 @@ def binary_to_string(binary_string):
 
     return result_string
 
+def send_request():
+    if (protocol == "TCP"):
+        socket.send(command.encode())
+    elif (protocol == "UDP"):
+        socket.sendto(command.encode(), (ip_address, port_number))
+
+def recv_response():
+    if (protocol == "TCP"):
+        data = socket.recv(4096).decode()
+    elif (protocol == "UDP"):
+        msg, client = socket.recvfrom(4096)
+        data = msg.decode()
+    return data
 
 def response():
-    data = socket.recv(4096).decode()  # Adjust the buffer size as needed
-    
-    if data:
-        res_code = data[:3]
-        res_op_code = data[-3:]
+    # data = socket.recv(4096).decode()  # Adjust the buffer size as needed
+    try:
+        data = recv_response()
+        if data:
+            res_code = data[:3]
+            res_op_code = data[-3:]
 
-        if res_code == "000":
-            if (res_op_code == "010"):
-                print("File name has been changed.")
-            else:
-                print("File has been uploaded successfully.")
-        elif res_code == "001":
-            get_response(data)
-        elif res_code == "010":
-            summary_response(data)
-        elif res_code == "011":
-            print("File does not exist on server.")
-        elif res_code == "100":
-            print("Error - Unknown Request")
-        elif res_code == "101":
-            print("Unsuccessful change")
-        elif res_code == "110":
-            help_response(data)
+            if res_code == "000":
+                if (res_op_code == "010"):
+                    print("File name has been changed.")
+                else:
+                    print("File has been uploaded successfully.")
+            elif res_code == "001":
+                get_response(data)
+            elif res_code == "010":
+                summary_response(data)
+            elif res_code == "011":
+                print("File does not exist on server.")
+            elif res_code == "100":
+                print("Error - Unknown Request")
+            elif res_code == "101":
+                print("Unsuccessful change")
+            elif res_code == "110":
+                help_response(data)
 
-    else:
-        print("No data received from the server")
-        return
+        else:
+            print("No data received from the server")
+            return
+    except:
+        print("No Server. Exiting!")
+        exit()
+        
+    # if data:
+    #     res_code = data[:3]
+    #     res_op_code = data[-3:]
+
+    #     if res_code == "000":
+    #         if (res_op_code == "010"):
+    #             print("File name has been changed.")
+    #         else:
+    #             print("File has been uploaded successfully.")
+    #     elif res_code == "001":
+    #         get_response(data)
+    #     elif res_code == "010":
+    #         summary_response(data)
+    #     elif res_code == "011":
+    #         print("File does not exist on server.")
+    #     elif res_code == "100":
+    #         print("Error - Unknown Request")
+    #     elif res_code == "101":
+    #         print("Unsuccessful change")
+    #     elif res_code == "110":
+    #         help_response(data)
+
+    # else:
+    #     print("No data received from the server")
+    #     return
 
 
 def summary_response(data):
@@ -192,8 +235,9 @@ def get_response(data):
 ###### MAIN ######
 
 # Ask user for decision on TCP or UDP
-# protocol = protocol_input()
-protocol = "TCP"
+protocol = protocol_input()
+# protocol = "TCP"
+# protocol = "UDP"
 # print(protocol)
 
 # IP Address and Port Number Input
@@ -239,8 +283,18 @@ while in_progress:
                 
                 #Send command to server
                 command = opcode + "00000"
-
-                socket.send(command.encode())
+                print("PROTOCOL USED = ", protocol) 
+                try:
+                    send_request()
+                    print("PROTOCOL RECV = ", protocol) 
+                    # socket.send(command.encode())
+                except ConnectionResetError:
+                    print("No Server. Exiting!")
+                    exit()
+                    
+                # send_request()
+                # socket.send(command.encode())
+                print("PROTOCOL RECV = ", protocol) 
                 response()
 
         else: # invalid command handling
@@ -258,7 +312,6 @@ while in_progress:
                 print("File name is too long, please try again.")
                 continue
 
-
             if (command_array[0] == "put"):
                 file_size_binary = controller.get_file_size_binary(command_array[1])
                 if (file_size_binary == -1):
@@ -274,7 +327,10 @@ while in_progress:
             else:  
                 command = opcode + file1_length_binary + file_name_binary
 
-            socket.send(command.encode())
+            print("PROTOCOL USED = ", protocol) 
+            send_request()
+            # socket.send(command.encode())
+            print("PROTOCOL RECV = ", protocol)
             response()
             
 
@@ -298,7 +354,8 @@ while in_progress:
 
             command = opcode + file1_length_binary + file1_name_binary + file2_length_binary + file2_name_binary
 
-            socket.send(command.encode())
+            send_request()
+            # socket.send(command.encode())
             response()
 
         else: # invalid command handling
