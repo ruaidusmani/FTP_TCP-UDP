@@ -67,32 +67,62 @@ def recv_response():
 
 def response():
     # data = socket.recv(4096).decode()  # Adjust the buffer size as needed
-    data = recv_response()
-    if data:
-        res_code = data[:3]
-        res_op_code = data[-3:]
+    try:
+        data = recv_response()
+        if data:
+            res_code = data[:3]
+            res_op_code = data[-3:]
 
-        if res_code == "000":
-            if (res_op_code == "010"):
-                print("File name has been changed.")
-            else:
-                print("File has been uploaded successfully.")
-        elif res_code == "001":
-            get_response(data)
-        elif res_code == "010":
-            summary_response(data)
-        elif res_code == "011":
-            print("File does not exist on server.")
-        elif res_code == "100":
-            print("Error - Unknown Request")
-        elif res_code == "101":
-            print("Unsuccessful change")
-        elif res_code == "110":
-            help_response(data)
+            if res_code == "000":
+                if (res_op_code == "010"):
+                    print("File name has been changed.")
+                else:
+                    print("File has been uploaded successfully.")
+            elif res_code == "001":
+                get_response(data)
+            elif res_code == "010":
+                summary_response(data)
+            elif res_code == "011":
+                print("File does not exist on server.")
+            elif res_code == "100":
+                print("Error - Unknown Request")
+            elif res_code == "101":
+                print("Unsuccessful change")
+            elif res_code == "110":
+                help_response(data)
 
-    else:
-        print("No data received from the server")
-        return
+        else:
+            print("No data received from the server")
+            return
+    except:
+        print("No Server. Exiting!")
+        exit()
+        
+    # if data:
+    #     res_code = data[:3]
+    #     res_op_code = data[-3:]
+
+    #     if res_code == "000":
+    #         if (res_op_code == "010"):
+    #             print("File name has been changed.")
+    #         else:
+    #             print("File has been uploaded successfully.")
+    #     elif res_code == "001":
+    #         get_response(data)
+    #     elif res_code == "010":
+    #         summary_response(data)
+    #     elif res_code == "011":
+    #         print("File does not exist on server.")
+    #     elif res_code == "100":
+    #         print("Error - Unknown Request")
+    #     elif res_code == "101":
+    #         print("Unsuccessful change")
+    #     elif res_code == "110":
+    #         help_response(data)
+
+    # else:
+    #     print("No data received from the server")
+    #     return
 
 
 def summary_response(data):
@@ -205,9 +235,9 @@ def get_response(data):
 ###### MAIN ######
 
 # Ask user for decision on TCP or UDP
-# protocol = protocol_input()
+protocol = protocol_input()
 # protocol = "TCP"
-protocol = "UDP"
+# protocol = "UDP"
 # print(protocol)
 
 # IP Address and Port Number Input
@@ -254,7 +284,15 @@ while in_progress:
                 #Send command to server
                 command = opcode + "00000"
                 print("PROTOCOL USED = ", protocol) 
-                send_request()
+                try:
+                    send_request()
+                    print("PROTOCOL RECV = ", protocol) 
+                    # socket.send(command.encode())
+                except ConnectionResetError:
+                    print("No Server. Exiting!")
+                    exit()
+                    
+                # send_request()
                 # socket.send(command.encode())
                 print("PROTOCOL RECV = ", protocol) 
                 response()
@@ -273,7 +311,6 @@ while in_progress:
             else: 
                 print("File name is too long, please try again.")
                 continue
-
 
             if (command_array[0] == "put"):
                 file_size_binary = controller.get_file_size_binary(command_array[1])

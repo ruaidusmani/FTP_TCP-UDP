@@ -240,7 +240,8 @@ def handle_tcp_client(client, addr):
     while True:
         data = client.recv(1024).decode()
         if not data: # checks if data is empty
-            continue
+            print("Disconnected")
+            break
 
         # Check command opcode and handle requests based of it
         opcode = data[:3]
@@ -295,6 +296,10 @@ def udp_server():
             msg, addr = udp_socket.recvfrom(1024)  # Buffer size is 1024 bytes
             data = msg.decode()
 
+            if not data: # checks if data is empty
+                print("Disconnected")
+                break
+
             print(f"Received message from {addr}: {data}")
 
             # Check command opcode and handle requests based on it
@@ -325,13 +330,28 @@ def udp_server():
             udp_socket.sendto(response_msg_bytes, addr)
 
 
-# tcp_thread = threading.Thread(target=tcp_server)
-# udp_thread = threading.Thread(target=udp_server)
+tcp_thread = threading.Thread(target=tcp_server)
+udp_thread = threading.Thread(target=udp_server)
+
+try:
+    tcp_thread.start() 
+    udp_thread.start()
+
+except (KeyboardInterrupt, SystemExit):
+    cleanup_stop_thread()
+    sys.exit()
+
+
 
 # tcp_thread.start()
 # udp_thread.start()
 
-# time.sleep(10)
+# tcp_thread.join()
+# udp_thread.join()
 
-# tcp_server()
-udp_server()
+
+
+# # time.sleep(10)
+
+# # tcp_server()
+# udp_server()
