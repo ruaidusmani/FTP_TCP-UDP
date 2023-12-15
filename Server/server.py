@@ -9,6 +9,7 @@ sys.path.insert(0, '../Controller')
 from control_module import controller
 
 HOST = "127.0.0.1" #localhost
+# HOST = "10.0.0.54" #localhost of my macbook machine
 PORT = 12000 # listening port
 
 MAX_THREADS = 10
@@ -146,16 +147,22 @@ def handle_put_request(data):
     print(f"File Name: {file_name}")
     print(f"File Data: {file_data}")
 
-    # Put file on server
-    with open(file_name, 'w') as file:
-        file.write(file_data)
+    # # Put file on server
+    # with open(file_name, 'w') as file:
+    #     file.write(file_data)
 
-    # Send response to client
-    res_code = "000"
+    # write to file function
+    controller.file_write(file_name, file_data)
+
+    res_code = controller.file_write(file_name, file_data)
+
+    # # Send response to client
+    # res_code = "000"
     print("Res code = " + res_code)
     
     # Response message send to client
     response_message = res_code + "00000"
+    print (response_message)
 
     return response_message
 
@@ -238,7 +245,7 @@ def handle_tcp_client(client, addr):
     print("Success")
 
     while True:
-        data = client.recv(1024).decode()
+        data = client.recv(10000).decode()
         if not data: # checks if data is empty
             print("Disconnected")
             break
@@ -267,6 +274,7 @@ def handle_tcp_client(client, addr):
                 print ("Received invalid request. Try again.")
                 response_msg = "100" + "00000"
         
+        print ("response msg:", response_msg)
         client.send(response_msg.encode())
 
 

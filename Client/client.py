@@ -59,7 +59,7 @@ def send_request():
 
 def recv_response():
     if (protocol == "TCP"):
-        data = socket.recv(4096).decode()
+        data = socket.recv(10000).decode()
     elif (protocol == "UDP"):
         msg, client = socket.recvfrom(4096)
         data = msg.decode()
@@ -243,6 +243,7 @@ protocol = protocol_input()
 # IP Address and Port Number Input
 # ip_address, port_number = get_ip_address_port()
 ip_address, port_number = "127.0.0.1", int("12000")
+# ip_address, port_number = "10.0.0.54", int("12000")
 print(ip_address)
 print(port_number)
 
