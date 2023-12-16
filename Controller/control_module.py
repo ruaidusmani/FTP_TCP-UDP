@@ -49,33 +49,10 @@ class controller:
         if not os.path.isfile(file):
             return -1
 
-        file_data_binary = ""
-        file_extension = file.split(".")[1]
-        match (file_extension):
-            case "txt":
-                with open(file, 'r') as f:
-                    file_data = f.read()
-                for i in range(0, len(file_data)):
-                    # convert each character to binary
-                    file_data_binary += format(ord(file_data[i]), '08b')
+        with open(file, 'rb') as f:
+                file_data = f.read()
 
-            case "jpg":
-                with open(file, 'rb') as f:
-                    file_data = f.read()
-                    # print (file_data)
-                    for i in range(0, len(file_data)):
-                        # convert each character to binary
-                        file_data_binary += ''.join(format(byte, '08b') for byte in file_data)
-
-            case _: # default
-                return -1
-
-
-        # with open(file, 'r') as f: # open file in binary mode
-        #     file_data = f.read() # read file data
-
-
-        return str(file_data_binary)
+        return file_data
 
     @staticmethod
     def string_to_binary(string):
@@ -90,19 +67,7 @@ class controller:
 
     @staticmethod
     def file_write(file_name, file_data):
-        file_extension = file_name.split(".")[1]
-        print (file_extension)
-        match (file_extension):
-            case "txt":
-                with open(file_name, 'w') as file:
-                    file.write(file_data)
-                return "000"
-            case "jpg":
-                with open(file_name, 'wb') as file:
-                    file.write(file_data)
-                return "000"
-            case "doc":
-               print ("doc file")
-            case _:
-                return "100"
+        with open(file_name, 'wb') as file:
+            file.write(file_data)
+        return "000"
                 
