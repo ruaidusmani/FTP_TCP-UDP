@@ -55,7 +55,7 @@ def binary_to_string(binary_string):
 
 def send_request():
     if (protocol == "TCP"):
-        client_socket.send(command.encode())
+        client_socket.sendall(command.encode())
     elif (protocol == "UDP"):
         client_socket.sendto(command.encode(), (ip_address, port_number))
 
@@ -78,8 +78,8 @@ def response():
         print("data: ", data)
         if data:
             try:
-                res_code = data.decode('utf-8')[:3]
-                res_op_code = data.decode('utf-8')[-3:]
+                res_code = data.decode()[:3]
+                res_op_code = data.decode()[-3:]
             except AttributeError:
                 res_code = data[:3]
                 res_op_code = data[-3:]
@@ -321,7 +321,7 @@ while in_progress:
                 print("PROTOCOL USED = ", protocol) 
                 send_request()
                 if (command_array[0] == "put"):
-                    client_socket.send(file_data_binary)
+                    client_socket.sendall(file_data_binary)
                 # socket.send(command.encode())
                 print("PROTOCOL RECV = ", protocol)
                 response()

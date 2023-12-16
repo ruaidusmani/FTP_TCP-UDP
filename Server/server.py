@@ -298,9 +298,10 @@ def handle_tcp_client(client, addr):
                 response_msg = "100" + "00000"
         
         
-        client.send(response_msg.encode())
+        client.sendall(response_msg.encode())
         if (opcode == "001" and response_data is not None):
-            client.send(response_data)
+            print(response_data)
+            client.sendall(response_data)
 
 
 def tcp_server():
