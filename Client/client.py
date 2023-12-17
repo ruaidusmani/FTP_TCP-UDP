@@ -206,7 +206,7 @@ def get_response(data):
             file_data += client_socket.recv(1024)
             file_size -= 1024
     else:
-        file_data += client_socket.recv(1024)
+        file_data += client_socket.recv(4096)
 
     with open(file_name, 'wb') as file:
         file.write(file_data)
