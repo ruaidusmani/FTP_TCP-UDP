@@ -1,6 +1,7 @@
 import socket 
 import os
 import sys
+import time
 sys.path.insert(0, '../Controller')
 from control_module import controller
 
@@ -221,6 +222,15 @@ def get_response(data):
     print(f"File Name: {file_name}")
     print(f"File Data: {file_data}")
 
+def send_file_via_udp(file_data_binary, ip_address, port_number):
+    CHUNK_SIZE = 1024  # Define a chunk size (in bytes)
+
+    with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as client_socket:
+        # Splitting the file_data_binary into chunks
+        for i in range(0, len(file_data_binary), CHUNK_SIZE):
+            chunk = file_data_binary[i:i+CHUNK_SIZE]
+            client_socket.sendto(chunk, (ip_address, port_number))
+
 def create_socket(protocol):
     global client_socket
     if protocol == "TCP":
@@ -250,6 +260,7 @@ create_socket(protocol)
 # print list of commands
 #TODO: Implement this in the help command coming from the server
 print ("Commands are: bye, change, get, help, put, summary")
+
 
 # main loop
 in_progress = True
@@ -329,8 +340,8 @@ while in_progress:
                         print("PEPE")
                         client_socket.sendall(file_data_binary)
                     else:
-                        print("LELE")
-                        client_socket.sendto(file_data_binary, (ip_address, port_number))
+                        send_file_via_udp(file_data_binary, ip_address, port_number)
+                        # client_socket.sendto(file_data_binary, (ip_address, port_number))
                     
                 # socket.send(command.encode())
                 print("PROTOCOL RECV = ", protocol)

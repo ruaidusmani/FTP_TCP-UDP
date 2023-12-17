@@ -149,10 +149,12 @@ def handle_put_request(data, client):
     
     if (file_size > 1024):
         while (file_size > 0):
-            file_data += client.recv(4092)
-            file_size -= 4092
+            file_data += client.recv(1024)
+            file_size -= 1024
             print (f"File size: {file_size}")
-        
+    elif (len(file_data) != file_size):
+        print("Here")
+        file_data = client.recv(file_size)
 
     # file_data_binary = bytes(data[8+file_length_byte+32:], 'utf-8') # get file data binary
     # print(f"File data binary: {file_data_binary}")
@@ -328,8 +330,8 @@ def udp_server():
             print(f"UDP message from {addr}: {data}")
 
             if not data: # checks if data is empty
-                print("Disconnected")
-                break
+                print("Data empty")
+                continue
 
             print(f"Received message from {addr}: {data}")
 
@@ -339,7 +341,7 @@ def udp_server():
             match (opcode):
                 case "000":
                     print ("Received put request from client")
-                    response_msg = handle_put_request(data, addr)
+                    response_msg = handle_put_request(data, server_socket)
                 case "001":
                     print ("Received get request from client")
                     response_msg, response_data = handle_get_request(data.decode())
@@ -360,9 +362,17 @@ def udp_server():
             # response_msg_bytes = str.encode()
             server_socket.sendto(response_msg.encode(), addr)
             if (opcode == "001" and response_data is not None):
-                server_socket.sendto(response_data, addr)
+                send_file_via_udp(response_data, addr[0], addr[1])
+                # server_socket.sendto(response_data, addr)
 
+def send_file_via_udp(file_data_binary, ip_address, port_number):
+    CHUNK_SIZE = 1024  # Define a chunk size (in bytes)
 
+    with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as client_socket:
+        # Splitting the file_data_binary into chunks
+        for i in range(0, len(file_data_binary), CHUNK_SIZE):
+            chunk = file_data_binary[i:i+CHUNK_SIZE]
+            client_socket.sendto(chunk, (ip_address, port_number))
 tcp_thread = threading.Thread(target=tcp_server, daemon=True)
 udp_thread = threading.Thread(target=udp_server, daemon=True)
 
