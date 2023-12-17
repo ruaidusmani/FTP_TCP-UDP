@@ -67,8 +67,8 @@ def recv_response():
             print("Server is not responding.")
             return
     elif (protocol == "UDP"):
-        msg, client = client_socket.recvfrom(1024)
-        data = msg.decode()
+        data, client = client_socket.recvfrom(1024)
+        # data = msg.decode()
     return data
 
 def response():
@@ -200,9 +200,12 @@ def get_response(data):
     file_data = b''
 
     print("Receiving file data...")
-    while (file_size > 0):
+    if (file_size > 1024):
+        while (file_size > 0):
+            file_data += client_socket.recv(1024)
+            file_size -= 1024
+    else:
         file_data += client_socket.recv(1024)
-        file_size -= 1024
 
     with open(file_name, 'wb') as file:
         file.write(file_data)
@@ -320,8 +323,15 @@ while in_progress:
 
                 print("PROTOCOL USED = ", protocol) 
                 send_request()
+    
                 if (command_array[0] == "put"):
-                    client_socket.sendall(file_data_binary)
+                    if (protocol == "TCP"):
+                        print("PEPE")
+                        client_socket.sendall(file_data_binary)
+                    else:
+                        print("LELE")
+                        client_socket.sendto(file_data_binary, (ip_address, port_number))
+                    
                 # socket.send(command.encode())
                 print("PROTOCOL RECV = ", protocol)
                 response()

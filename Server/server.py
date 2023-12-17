@@ -76,6 +76,7 @@ def handle_summary_request(data):
         # Response message send to client
         response_message = res_code + file_length_binary + file_name_binary + file_size_binary + file_data_binary.decode('utf-8')
 
+        print (response_message)
         return response_message
             
     else: # If file is not in directory
@@ -146,9 +147,11 @@ def handle_put_request(data, client):
     print(f"File data1: {file_data}")
     # print(f"File data2: {client.recv(file_size)}")
     
-    while (file_size > 0):
-        file_data += client.recv(4092)
-        file_size -= 4092
+    if (file_size > 1024):
+        while (file_size > 0):
+            file_data += client.recv(4092)
+            file_size -= 4092
+            print (f"File size: {file_size}")
         
 
     # file_data_binary = bytes(data[8+file_length_byte+32:], 'utf-8') # get file data binary
