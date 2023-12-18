@@ -1,3 +1,12 @@
+"""
+Carl Nakad (40210586), Ruaid Usmani (40212428)
+
+Controller to handle shared functions between client and server
+
+"We certify that this submission is the original work of members
+of the group and meets the Faculty's Expectations of Originality.”
+"""
+
 import os
 
 class controller:
@@ -26,7 +35,7 @@ class controller:
 
         #convert file length to string of 5 bits if it is less than 32
         if (file_length < 32):
-            file_length_binary = format(file_length, '05b') 
+            file_length_binary = format(file_length, '05b')
         else:
             file_length_binary = -1  # else -1 because it is too long
         return str(file_length_binary)
@@ -48,15 +57,11 @@ class controller:
     def get_file_data_binary(file):
         if not os.path.isfile(file):
             return -1
-        with open(file, 'r') as f: # open file in binary mode
-            file_data = f.read() # read file data
 
-        file_data_binary = ""
-        for i in range(0, len(file_data)):
-            # convert each character to binary
-            file_data_binary += format(ord(file_data[i]), '08b')
+        with open(file, 'rb') as f:
+                file_data = f.read()
 
-        return str(file_data_binary)
+        return file_data
 
     @staticmethod
     def string_to_binary(string):
@@ -68,3 +73,10 @@ class controller:
         # Convert binary to string
         str_data = ''.join(chr(int(binary_string[i:i+8], 2)) for i in range(0, len(binary_string), 8))
         return str_data
+
+    @staticmethod
+    def file_write(file_name, file_data):
+        with open(file_name, 'wb') as file:
+            file.write(file_data)
+        return "000"
+                
