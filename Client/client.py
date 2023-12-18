@@ -1,3 +1,12 @@
+"""
+Carl Nakad (40210586), Ruaid Usmani (40212428)
+
+Client File to send requests to server and receive response
+
+"We certify that this submission is the original work of members
+of the group and meets the Faculty's Expectations of Originality.”
+"""
+
 import socket 
 import os
 import sys
@@ -42,18 +51,6 @@ def get_ip_address_port():
         except socket.error:
             print("Invalid IP address or port number. Try again.")
 
-def binary_to_string(binary_string):
-    # Split the binary string into 8-bit chunks
-    chunks = [binary_string[i:i+8] for i in range(0, len(binary_string), 8)]
-
-    # Convert each 8-bit chunk to a character
-    characters = [chr(int(chunk, 2)) for chunk in chunks]
-
-    # Join the characters to form a string
-    result_string = ''.join(characters)
-
-    return result_string
-
 def send_request():
     if (protocol == "TCP"):
         client_socket.sendall(command.encode())
@@ -73,34 +70,45 @@ def recv_response():
     return data
 
 def response():
+    global debug_flag
     # data = socket.recv(4096).decode()  # Adjust the buffer size as needed
     try:
         data = recv_response()
-        print("data: ", data)
+
+        if (debug_flag == 1):
+            print("Data: ", data)
+
         if data:
             try:
                 res_code = data.decode()[:3]
                 res_op_code = data.decode()[-3:]
-            except AttributeError:
+            except UnicodeDecodeError:
                 res_code = data[:3]
                 res_op_code = data[-3:]
 
-            print("res_code: ", res_code, "res_op_code: ", res_op_code)
+            if (debug_flag == 1):
+                print("res_code: ", res_code)
+                print("res_op_code: ", res_op_code)
 
             if res_code == "000":
                 if (res_op_code == "010"):
+                    # if (debug_flag == 1):
                     print("File name has been changed.")
                 else:
+                    # if (debug_flag == 1):
                     print("File has been uploaded successfully.")
             elif res_code == "001":
                 get_response(data)
             elif res_code == "010":
                 summary_response(data)
             elif res_code == "011":
+                # if (debug_flag == 1):
                 print("File does not exist on server.")
             elif res_code == "100":
+                # if (debug_flag == 1):
                 print("Error - Unknown Request")
             elif res_code == "101":
+                # if (debug_flag == 1):
                 print("Unsuccessful change")
             elif res_code == "110":
                 help_response(data)
@@ -114,93 +122,71 @@ def response():
 
 
 def summary_response(data):
-    # print("we in here")
+    global debug_flag
 
-    # print("problem.")
-
-    # # try:
-    # # Receive data
-    # data = socket.recv(4096).decode()  # Adjust the buffer size as needed
-
-    # if data:
-        # parse msg to get file name and file size
     res_code = data[:3].decode()
     res_file_name_length_binary = data[3:8].decode()
     res_file_name_length = int(res_file_name_length_binary, 2)
-    print("res_file_name_binary_length = ", res_file_name_length)
     res_file_name_byte_length = (res_file_name_length-1) * 8
-
     res_file_name = data[8:8+res_file_name_byte_length].decode()
-    print("length of binary string of res_file_name: ", len(res_file_name))
-    print("res_file_name bn: ", res_file_name)
-    res_file_name_str = binary_to_string(res_file_name)
-    print("res_file_name str: ", res_file_name_str)
-
+    res_file_name_str = controller.binary_to_string(res_file_name)
     res_file_size = data[8+res_file_name_byte_length:8+res_file_name_byte_length+32].decode()
-    print("res_file_size bn: ", res_file_size)
-
     res_file_data = data[8+res_file_name_byte_length+32:].decode()
-    print("res_file_data bn: ", res_file_data)
-
-    # res_file_data = ''.join(chr(int(res_file_data[i:i+8], 2)) for i in range(0, len(res_file_data), 8))
-    
-    # print response
-    print("Response from server:")
-    print(f"Response Code: {res_code}")
-    print(f"File Name Length: {res_file_name_length}")
-    print(f"File Name: {res_file_name_str}")
-    print(f"File Size: {res_file_size}")
-    print(f"File Data: {res_file_data}")
 
     # Store file content into a file
     file = open(res_file_name_str, "w")
     file.write(res_file_data)
     file.close()
 
-    print("Summary Done")
-    # else:
-        # print("No data received from the server")
-        # return
+    if (debug_flag == 1):
+        print("res_file_name_binary_length = ", res_file_name_length)
+        print("length of binary string of res_file_name: ", len(res_file_name))
+        print("res_file_name bn: ", res_file_name)
+        print("res_file_name str: ", res_file_name_str)
+        print("res_file_size bn: ", res_file_size)
+        print("res_file_data bn: ", res_file_data)
+        
+        # print response
+        print("Response from server:")
+        print(f"Response Code: {res_code}")
+        print(f"File Name Length: {res_file_name_length}")
+        print(f"File Name: {res_file_name_str}")
+        print(f"File Size: {res_file_size}")
+        print(f"File Data: {res_file_data}")
+
+        print("Summary Done")
 
 def help_response(data):
-    # data = socket.recv(4096).decode()  # Adjust the buffer size as needed
-
-    # if data:
-        # parse msg to get file name and file size
     res_code = data[:3]
     res_length = data[3:8]
     res_data = data[8:]
 
     # convert res_data to string
-    res_data = binary_to_string(res_data)
+    res_data = controller.binary_to_string(res_data)
 
     help_msg = "Commands are: " + res_data
     print(help_msg)
 
 def get_response(data):
+    global debug_flag
     # Parse the command
     opcode = data[:3].decode() # opcode 
-    print(f"Opcode: {opcode}")
-
     file_length_binary = data[3:8].decode() # get file length binary
-    print(f"File Length Binary: {file_length_binary}")
-
     file_length = int(file_length_binary, 2) # convert binary to int for file length
     file_length_byte = (file_length-1) * 8 # get file length in bytes
-    print(f"File length in bytes: {file_length_byte}")
-
     file_name_binary = data[8:8+file_length_byte].decode() # get file name binary
-    print(f"File name binary: {file_name_binary}")
+
     # Decode file name binary to retrieve the file name
     file_name = ''.join(chr(int(file_name_binary[i:i+8], 2)) for i in range(0, len(file_name_binary), 8))
 
     file_size_binary = data[8+file_length_byte:8+file_length_byte+32].decode() # get file size binary
     file_size = int(file_size_binary, 2) # convert binary to int for file length
-    print(f"File size binary: {file_size_binary}")
-    print(f"File size: {file_size}")
-    file_data = b''
 
-    print("Receiving file data...")
+
+    if (debug_flag == 1):
+        print("Receiving file data...")
+
+    file_data = b''
     if (file_size > 1024):
         while (file_size > 0):
             file_data += client_socket.recv(1024)
@@ -211,16 +197,22 @@ def get_response(data):
     with open(file_name, 'wb') as file:
         file.write(file_data)
 
-    print(f"{file_name} has been downloaded successfully.")
-
     file_data_binary = data[8+file_length_byte+32:] # get file data binary
-    print(f"File data binary: {file_data_binary}")
 
-    print(f"Opcode: {opcode}")
-    print(f"File Length Binary: {file_length_binary}")
-    print(f"File Length: {file_length}")
-    print(f"File Name: {file_name}")
-    print(f"File Data: {file_data}")
+    if (debug_flag == 1):
+        print(f"Opcode: {opcode}")
+        print(f"File Length Binary: {file_length_binary}")
+        print(f"File length in bytes: {file_length_byte}")
+        print(f"File name binary: {file_name_binary}")
+        print(f"File size binary: {file_size_binary}")
+        print(f"File data binary: {file_data_binary}")
+
+        print(f"File Length: {file_length}")
+        print(f"File Name: {file_name}")
+        print(f"File size: {file_size}")
+        print(f"File Data: {file_data}")
+
+    print(f"{file_name} has been downloaded successfully.")
 
 def send_file_via_udp(file_data_binary, ip_address, port_number):
     CHUNK_SIZE = 1024  # Define a chunk size (in bytes)
@@ -231,46 +223,61 @@ def send_file_via_udp(file_data_binary, ip_address, port_number):
             chunk = file_data_binary[i:i+CHUNK_SIZE]
             client_socket.sendto(chunk, (ip_address, port_number))
 
-def create_socket(protocol):
+def create_socket(protocol, in_progress):
     global client_socket
     if protocol == "TCP":
         client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         client_socket.settimeout(3)
-        client_socket.connect((ip_address, port_number))
-        print("TCP Server-Client Connected")
+        try:
+            
+            client_socket.connect((ip_address, port_number))
+            print(ip_address)
+            print(port_number)
+            print("TCP Server-Client Connected")
+            return True
+        except ConnectionRefusedError:
+            print("No Server")
+            return False
+        
     elif protocol == "UDP":
         client_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        print(ip_address)
+        print(port_number)
         print("UDP Server-Client Connected")
-###### MAIN ######
+        return True
 
+
+##### MAIN ######
+debug_flag = int(sys.argv[1])
+if (debug_flag == 1):
+    print("Debug mode ON")
+else: 
+    print("Debug mode OFF")
+    
+in_progress = False
 # Ask user for decision on TCP or UDP
-protocol = protocol_input()
+while (not in_progress):
+    protocol = protocol_input()
 
-# IP Address and Port Number Input
-# ip_address, port_number = get_ip_address_port()
-ip_address, port_number = "127.0.0.1", int("20000")
-# ip_address, port_number = "10.0.0.54", int("12000")
-print(ip_address)
-print(port_number)
+    # IP Address and Port Number Input
+    # ip_address, port_number = get_ip_address_port()
+    ip_address, port_number = "127.0.0.1", int("20000")
+    # ip_address, port_number = "10.0.0.54", int("12000")
 
-# Connect to server based on protocol
-# TODO: Uncomment this after server.py created
-create_socket(protocol)
+    # Connect to server based on protocol
+    # TODO: Uncomment this after server.py created
 
-# print list of commands
-#TODO: Implement this in the help command coming from the server
-print ("Commands are: bye, change, get, help, put, summary")
+    in_progress = create_socket(protocol, in_progress)
 
 
 # main loop
-in_progress = True
+
 while in_progress:
     try:
         # Ask user for command
         print("Enter command: ")
         full_command = input("")
         command_array = full_command.split()
-
 
         # Process the commands
         if command_array[0] in ["help", "bye"]: # commands with no file name
@@ -285,18 +292,13 @@ while in_progress:
                     
                     #Send command to server
                     command = opcode + "00000"
-                    print("PROTOCOL USED = ", protocol) 
+
                     try:
                         send_request()
-                        print("PROTOCOL RECV = ", protocol) 
-                        # socket.send(command.encode())
                     except ConnectionResetError:
                         print("No Server. Exiting!")
                         exit()
-                        
-                    # send_request()
-                    # socket.send(command.encode())
-                    print("PROTOCOL RECV = ", protocol) 
+
                     response()
 
             else: # invalid command handling
@@ -322,29 +324,26 @@ while in_progress:
                         print("File not found.")
                         continue
                     file_data_binary = controller.get_file_data_binary(command_array[1])
-                    print("file_length_binary: ", file1_length_binary)
-                    print("file_name_binary: ", file_name_binary)
-                    print("file_size_binary: ", file_size_binary)
-                    print("file_data_binary: ", file_data_binary)
+                    if (debug_flag == 1):
+                        print("file_length_binary: ", file1_length_binary)
+                        print("file_name_binary: ", file_name_binary)
+                        print("file_size_binary: ", file_size_binary)
+                        print("file_data_binary: ", file_data_binary)
 
                     command = opcode + file1_length_binary + file_name_binary + file_size_binary
                     
                 else:  
                     command = opcode + file1_length_binary + file_name_binary
-
-                print("PROTOCOL USED = ", protocol) 
                 send_request()
     
                 if (command_array[0] == "put"):
                     if (protocol == "TCP"):
-                        print("PEPE")
                         client_socket.sendall(file_data_binary)
                     else:
                         send_file_via_udp(file_data_binary, ip_address, port_number)
                         # client_socket.sendto(file_data_binary, (ip_address, port_number))
                     
                 # socket.send(command.encode())
-                print("PROTOCOL RECV = ", protocol)
                 response()
                 
 

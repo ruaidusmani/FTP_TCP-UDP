@@ -1,3 +1,12 @@
+"""
+Carl Nakad (40210586), Ruaid Usmani (40212428)
+
+Controller to handle shared functions between client and server
+
+"We certify that this submission is the original work of members
+of the group and meets the Faculty's Expectations of Originality.”
+"""
+
 import os
 
 class controller:
