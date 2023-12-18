@@ -229,7 +229,6 @@ def create_socket(protocol, in_progress):
         client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         client_socket.settimeout(3)
         try:
-            
             client_socket.connect((ip_address, port_number))
             print(ip_address)
             print(port_number)
@@ -238,11 +237,22 @@ def create_socket(protocol, in_progress):
         except ConnectionRefusedError:
             print("No Server")
             return False
+        except OSError:
+            print("No Server")
+            return False
         
     elif protocol == "UDP":
         client_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        print(ip_address)
-        print(port_number)
+
+        # Send a dummy message to the server to establish connection
+        try:
+            client_socket.sendto("".encode(), (ip_address, port_number))
+        except ConnectionRefusedError:
+            print("No Server")
+            return False
+        except OSError:
+            print("No Server")
+            return False
         print("UDP Server-Client Connected")
         return True
 
@@ -262,12 +272,31 @@ while (not in_progress):
     # IP Address and Port Number Input
     # ip_address, port_number = get_ip_address_port()
     ip_address, port_number = "127.0.0.1", int("20000")
+    while True:
+        try:
+            ip_address = input("Input IP address: ")
+        except ValueError:
+            print("Invalid Response.")
+            continue
+        else:
+            break
+
+    while True:
+        try:
+            port_number = int(input("Input port: "))
+        except ValueError:
+            print("Invalid Response.")
+            continue
+        else:
+            break
+
     # ip_address, port_number = "10.0.0.54", int("12000")
 
     # Connect to server based on protocol
     # TODO: Uncomment this after server.py created
 
     in_progress = create_socket(protocol, in_progress)
+
 
 
 # main loop

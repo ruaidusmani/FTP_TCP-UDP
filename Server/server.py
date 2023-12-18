@@ -438,7 +438,9 @@ if (debug_flag == 1):
 else: 
     print("Debug mode OFF")
 
-
+print("Starting server...")
+print("ip address: " + HOST)
+print("port number: " + str(PORT))
 tcp_thread = threading.Thread(target=tcp_server, daemon=True)
 udp_thread = threading.Thread(target=udp_server, daemon=True)
 
