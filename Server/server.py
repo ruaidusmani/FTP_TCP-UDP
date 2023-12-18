@@ -8,18 +8,11 @@ import sys
 sys.path.insert(0, '../Controller')
 from control_module import controller
 
-def thread_task():
-    global stop_threads
-    while not stop_threads:
-        # Your thread's work here
-        time.sleep(1)  # Example work: sleeping for 1 second
-    print("Thread stopping")
-
 # Carl Nakad (40210586), Ruaid Usmani (40212428)
 
 HOST = "127.0.0.1" #localhost
 # HOST = "10.0.0.54" #localhost of my macbook machine
-PORT = 12000 # listening port
+PORT = 20000 # listening port
 
 MAX_THREADS = 10
 
@@ -149,6 +142,13 @@ def handle_put_request(data, client):
     
     if (file_size > 1024):
         while (file_size > 0):
+            if (file_size < 1024):
+                try:
+                    file_data += client.recv(file_size)
+                except TimeoutError:
+                    print("Timeout error")
+                    break
+                break
             file_data += client.recv(1024)
             file_size -= 1024
             print (f"File size: {file_size}")
@@ -269,6 +269,8 @@ def handle_tcp_client(client, addr):
         except ConnectionResetError:
             print("Client disconnected")
             return
+        except TimeoutError:
+            continue
 
         if not data: # checks if data is empty
             print("Disconnected")
@@ -318,6 +320,7 @@ def tcp_server():
         while True:
             client_socket, addr = server_socket.accept()
             client_thread = threading.Thread(target=handle_tcp_client, args=(client_socket, addr))
+            client_socket.settimeout(1)
             client_thread.start()
             
 def udp_server():

@@ -235,7 +235,7 @@ def create_socket(protocol):
     global client_socket
     if protocol == "TCP":
         client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        client_socket.settimeout(5.0)
+        client_socket.settimeout(3)
         client_socket.connect((ip_address, port_number))
         print("TCP Server-Client Connected")
     elif protocol == "UDP":
@@ -248,7 +248,7 @@ protocol = protocol_input()
 
 # IP Address and Port Number Input
 # ip_address, port_number = get_ip_address_port()
-ip_address, port_number = "127.0.0.1", int("12000")
+ip_address, port_number = "127.0.0.1", int("20000")
 # ip_address, port_number = "10.0.0.54", int("12000")
 print(ip_address)
 print(port_number)
